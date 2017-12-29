@@ -156,7 +156,6 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
 	if (pose.empty()){
         return;
 	}
-    cout << "Test1" << endl;
 
     //Quaternion
 	tf::Matrix3x3 tf3d;
@@ -185,7 +184,6 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
 	tf::Quaternion quaternionForHamilton(tfqt[3], tfqt[0], tfqt[1], tfqt[2]);
 	tf::Quaternion secondQuaternionForHamilton(tfqt[3], -tfqt[0], -tfqt[1], -tfqt[2]);
 	tf::Quaternion translationHamilton(0, translationForCamera[0], translationForCamera[1], translationForCamera[2]);
-    cout << "Test2" << endl;
 
 	tf::Quaternion translationStepQuat;
 	translationStepQuat = hamiltonProduct(hamiltonProduct(quaternionForHamilton, translationHamilton), secondQuaternionForHamilton);
@@ -208,7 +206,7 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
 	transformCurrent.setRotation(tfqt);
 	//Publishes transform
 	static tf::TransformBroadcaster br;
-    cout << "Test3" << endl;
+ 
 	br.sendTransform(tf::StampedTransform(transformCurrent, ros::Time::now(), "world", "camera_pose"));
 
 
@@ -243,25 +241,23 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
 
     // POINT CLOUD
     sensor_msgs::PointCloud cloud;
-    cloud.header.frame_id = "world";
     std::vector<geometry_msgs::Point32> geo_points;
     std::vector<ORB_SLAM2::MapPoint*> points = mpSLAM->GetTrackedMapPoints();
     if (points.empty()){
         return;
 	}
-    //cout << points.size() << endl;
-    for (std::vector<int>::size_type i = 0; i != points.size(); i++) {
+    for (std::vector<int>::size_type i = 0; i < points.size(); i++) {
 	    if (points[i]) {
 		    cv::Mat coords = points[i]->GetWorldPos();
 		    geometry_msgs::Point32 pt;
-		    pt.x = coords.at<float>(0);
-		    pt.y = coords.at<float>(2);
-		    pt.z = -coords.at<float>(1);
+
+		    pt.x = coords.at<float>(2);
+		    pt.y = coords.at<float>(1);
+		    pt.z = coords.at<float>(0);
 		    geo_points.push_back(pt);
 	    } else {
 	    }
     }
-    //cout << geo_points.size() << endl;
     cloud.points = geo_points;
     cloud_pub.publish(cloud);
 }
