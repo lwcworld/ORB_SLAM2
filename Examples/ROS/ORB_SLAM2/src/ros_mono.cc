@@ -241,6 +241,7 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
 
     // POINT CLOUD
     sensor_msgs::PointCloud cloud;
+    cloud.header.frame_id = "world";
     std::vector<geometry_msgs::Point32> geo_points;
     std::vector<ORB_SLAM2::MapPoint*> points = mpSLAM->GetTrackedMapPoints();
     if (points.empty()){
