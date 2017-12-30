@@ -178,6 +178,7 @@ int main(int argc, char **argv){
 	grid_map_msg.info.width = w;
 	grid_map_msg.info.height = h;
 	grid_map_msg.info.resolution = 1.0/scale_factor;
+	grid_map_msg.info.origin.orientation.w = 1;
 
 	grid_map_int = cv::Mat(h, w, CV_8SC1, (char*)(grid_map_msg.data.data()));
 
