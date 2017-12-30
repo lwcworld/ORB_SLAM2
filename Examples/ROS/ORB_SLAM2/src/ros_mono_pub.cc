@@ -48,6 +48,7 @@
 bool read_from_topic = false, read_from_camera = false;
 std::string image_topic = "/camera/image_raw";
 int all_pts_pub_gap = 0;
+bool show_viewer = true;
 
 vector<string> vstrImageFilenames;
 vector<double> vTimestamps;
@@ -89,7 +90,7 @@ int main(int argc, char **argv){
 	int n_images = vstrImageFilenames.size();
 
 	// Create SLAM system. It initializes all system threads and gets ready to process frames.
-	ORB_SLAM2::System SLAM(argv[1], argv[2], ORB_SLAM2::System::MONOCULAR, true);
+	ORB_SLAM2::System SLAM(argv[1], argv[2], ORB_SLAM2::System::MONOCULAR, show_viewer);
 	ros::NodeHandle nodeHandler;
 	//ros::Publisher pub_cloud = nodeHandler.advertise<sensor_msgs::PointCloud2>("cloud_in", 1000);
 	ros::Publisher pub_pts_and_pose = nodeHandler.advertise<geometry_msgs::PoseArray>("pts_and_pose", 1000);
@@ -108,7 +109,9 @@ int main(int argc, char **argv){
 #else
 		std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
 #endif
-		for (int frame_id = 0; read_from_camera || frame_id < n_images; ++frame_id){
+		//cv::namedWindow("Press r to reset");
+		int frame_id = 0;
+		while (read_from_camera || frame_id < n_images){
 			if (read_from_camera) {
 				cap_obj.read(im);
 #ifdef COMPILEDWITHC11
@@ -133,6 +136,21 @@ int main(int argc, char **argv){
 
 			publish(SLAM, pub_pts_and_pose, pub_all_kf_and_pts, frame_id);
 
+			++frame_id;
+
+			//			int key = cv::waitKey(1);
+			//			int key_mod = key % 256;
+			//			if (key == 'r' || key_mod == 'r' || key == 'r' || key_mod == 'r') {
+			//				printf("Resetting the SLAM system\n");
+			//				SLAM.Shutdown();
+			//				SLAM.reset(argv[2], show_viewer);
+			//#ifdef COMPILEDWITHC11
+			//				t1 = std::chrono::steady_clock::now();
+			//#else
+			//				t1 = std::chrono::monotonic_clock::now();
+			//#endif
+			//				frame_id = 0;
+			//			}
 			//cv::imshow("Press escape to exit", im);
 			//if (cv::waitKey(1) == 27) {
 			//	break;
@@ -143,13 +161,6 @@ int main(int argc, char **argv){
 		}
 	}
 	//ros::spin();
-
-	mkdir("results", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-	SLAM.getMap()->Save("results//map_pts_out.obj");
-	SLAM.getMap()->SaveWithTimestamps("results//map_pts_and_keyframes.txt");
-	// Save camera trajectory
-	SLAM.SaveKeyFrameTrajectoryTUM("results//key_frame_trajectory.txt");
-
 
 	// Stop all threads
 	SLAM.Shutdown();
@@ -162,7 +173,7 @@ int main(int argc, char **argv){
 
 void publish(ORB_SLAM2::System &SLAM, ros::Publisher &pub_pts_and_pose,
 	ros::Publisher &pub_all_kf_and_pts, int frame_id) {
-	if (all_pts_pub_gap>0 && pub_count >= all_pts_pub_gap) {
+	if (all_pts_pub_gap > 0 && pub_count >= all_pts_pub_gap) {
 		pub_all_pts = true;
 		pub_count = 0;
 	}
@@ -174,11 +185,13 @@ void publish(ORB_SLAM2::System &SLAM, ros::Publisher &pub_pts_and_pose,
 		kf_pt_array.poses.push_back(geometry_msgs::Pose());
 		sort(key_frames.begin(), key_frames.end(), ORB_SLAM2::KeyFrame::lId);
 		unsigned int n_kf = 0;
+		unsigned int n_pts_id = 0;
 		for (auto key_frame : key_frames) {
 			// pKF->SetPose(pKF->GetPose()*Two);
 
-			if (key_frame->isBad())
+			if (!key_frame || key_frame->isBad()) {
 				continue;
+			}
 
 			cv::Mat R = key_frame->GetRotation().t();
 			vector<float> q = ORB_SLAM2::Converter::toQuaternion(R);
@@ -194,7 +207,7 @@ void publish(ORB_SLAM2::System &SLAM, ros::Publisher &pub_pts_and_pose,
 			kf_pose.orientation.w = q[3];
 			kf_pt_array.poses.push_back(kf_pose);
 
-			unsigned int n_pts_id = kf_pt_array.poses.size();
+			n_pts_id = kf_pt_array.poses.size();
 			//! placeholder for number of points
 			kf_pt_array.poses.push_back(geometry_msgs::Pose());
 			std::set<ORB_SLAM2::MapPoint*> map_points = key_frame->GetMapPoints();
@@ -218,14 +231,14 @@ void publish(ORB_SLAM2::System &SLAM, ros::Publisher &pub_pts_and_pose,
 				kf_pt_array.poses.push_back(curr_pt);
 				++n_pts;
 			}
-			geometry_msgs::Pose n_pts_msg;
-			n_pts_msg.position.x = n_pts_msg.position.y = n_pts_msg.position.z = n_pts;
-			kf_pt_array.poses[n_pts_id] = n_pts_msg;
+			kf_pt_array.poses[n_pts_id].position.x = (double)n_pts;
+			kf_pt_array.poses[n_pts_id].position.y = (double)n_pts;
+			kf_pt_array.poses[n_pts_id].position.z = (double)n_pts;
 			++n_kf;
 		}
-		geometry_msgs::Pose n_kf_msg;
-		n_kf_msg.position.x = n_kf_msg.position.y = n_kf_msg.position.z = n_kf;
-		kf_pt_array.poses[0] = n_kf_msg;
+		kf_pt_array.poses[0].position.x = (double)n_kf;
+		kf_pt_array.poses[0].position.y = (double)n_kf;
+		kf_pt_array.poses[0].position.z = (double)n_kf;
 		kf_pt_array.header.frame_id = "1";
 		kf_pt_array.header.seq = frame_id + 1;
 		printf("Publishing data for %u keyfranmes\n", n_kf);
@@ -407,10 +420,15 @@ bool parseParams(int argc, char **argv) {
 	else {
 		LoadImages(string(argv[3]), vstrImageFilenames, vTimestamps);
 	}
-	if (argc >= 5) {
-		all_pts_pub_gap = atoi(argv[4]);
+	int arg_id = 4;
+	if (argc > arg_id) {
+		all_pts_pub_gap = atoi(argv[arg_id++]);
+	}
+	if (argc > arg_id) {
+		show_viewer = atoi(argv[arg_id++]);
 	}
 	printf("all_pts_pub_gap: %d\n", all_pts_pub_gap);
+	printf("show_viewer: %d\n", show_viewer);
 	return 1;
 }
 
