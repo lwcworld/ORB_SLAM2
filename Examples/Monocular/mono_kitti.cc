@@ -28,6 +28,7 @@
 #include<opencv2/core/core.hpp>
 
 #include"System.h"
+#include <unistd.h>
 
 using namespace std;
 
@@ -101,9 +102,14 @@ int main(int argc, char **argv)
             T = tframe-vTimestamps[ni-1];
 
         if(ttrack<T)
-            usleep((T-ttrack)*1e6);
+            usleep((T-ttrack)*1e6);		
     }
-
+	//std::vector<MapPoint*> map_pts = SLAM.getMap()->GetAllMapPoints();
+	//int n_map_points = map_pts.size();
+	//ofstream map_pts_out("map_pts_out.txt");
+	//for(int i = 0; i < n_map_points; ++i){
+	//	map_pts_out<< map_pts[i]->
+	//}
     // Stop all threads
     SLAM.Shutdown();
 
@@ -118,8 +124,12 @@ int main(int argc, char **argv)
     cout << "median tracking time: " << vTimesTrack[nImages/2] << endl;
     cout << "mean tracking time: " << totaltime/nImages << endl;
 
-    // Save camera trajectory
-    SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");    
+	// Save 3D points as obj file
+	SLAM.getMap()->Save("kitti_map_pts_out.obj");
+	// Save 3D points and timestamps of all keyframes they are visible in
+	SLAM.getMap()->SaveWithTimestamps("kitti_map_pts_and_keyframes.txt");
+	// Save camera trajectory
+	SLAM.SaveKeyFrameTrajectoryTUM("kitti_key_frame_trajectory.txt");
 
     return 0;
 }

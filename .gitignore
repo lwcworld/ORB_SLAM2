@@ -27,3 +27,5 @@ Examples/ROS/.DS_Store
 Examples/.DS_Store
 Examples/ROS/ORB_SLAM2/.DS_Store
 .DS_Store
+Examples/ROS/ORB_SLAM2/Monosub
+Examples/ROS/ORB_SLAM2/Monopub

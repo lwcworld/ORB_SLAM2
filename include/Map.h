@@ -27,7 +27,7 @@
 
 #include <mutex>
 
-
+using namespace std;
 
 namespace ORB_SLAM2
 {
@@ -39,6 +39,15 @@ class Map
 {
 public:
     Map();
+
+	bool Save(const string &filename);
+	bool SaveWithTimestamps(const string &filename);
+	bool SaveWithPose(const string &filename);
+
+	void _WriteMapPoint(ofstream &f, MapPoint* mp,
+		const std::string &end_marker = "\n");
+	void _WriteMapPointObj(ofstream &f, MapPoint* mp, 
+		const std::string &end_marker="\n");
 
     void AddKeyFrame(KeyFrame* pKF);
     void AddMapPoint(MapPoint* pMP);

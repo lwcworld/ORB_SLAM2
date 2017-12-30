@@ -105,6 +105,8 @@ int main(int argc, char **argv)
             usleep((T-ttrack)*1e6);
     }
 
+
+
     // Stop all threads
     SLAM.Shutdown();
 
@@ -119,8 +121,11 @@ int main(int argc, char **argv)
     cout << "median tracking time: " << vTimesTrack[nImages/2] << endl;
     cout << "mean tracking time: " << totaltime/nImages << endl;
 
-    // Save camera trajectory
-    SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
+	// Save 3D points
+	SLAM.getMap()->Save("tum_map_pts_out.obj");
+	SLAM.getMap()->SaveWithTimestamps("tum_map_pts_and_keyframes.txt");
+	// Save camera trajectory
+    SLAM.SaveKeyFrameTrajectoryTUM("tum_key_frame_trajectory.txt");
 
     return 0;
 }
