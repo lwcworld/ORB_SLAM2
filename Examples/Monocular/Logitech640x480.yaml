@@ -17,7 +17,7 @@ Camera.p2: 0.001408
 Camera.k3: 0.0
 
 # Camera frames per second 
-Camera.fps: 90.0
+Camera.fps: 30.0
 
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
 Camera.RGB: 1
