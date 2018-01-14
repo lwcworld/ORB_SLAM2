@@ -38,6 +38,8 @@
 #include "MapDrawer.h"
 #include "System.h"
 
+#include "SlamDataPub.h"  //zl
+
 #include <mutex>
 
 namespace ORB_SLAM2
@@ -49,6 +51,7 @@ class Map;
 class LocalMapping;
 class LoopClosing;
 class System;
+class SlamDataPub;
 
 class Tracking
 {  
@@ -65,7 +68,8 @@ public:
     void SetLocalMapper(LocalMapping* pLocalMapper);
     void SetLoopClosing(LoopClosing* pLoopClosing);
     void SetViewer(Viewer* pViewer);
-
+    void SetSlamDataPub(SlamDataPub* pSlamDataPub);  //zl
+    
     // Load new settings
     // The focal lenght should be similar or scale prediction will fail when projecting points
     // TODO: Modify MapPoint::PredictScale to take into account focal lenght
@@ -177,6 +181,9 @@ protected:
     Viewer* mpViewer;
     FrameDrawer* mpFrameDrawer;
     MapDrawer* mpMapDrawer;
+    
+    //Publisher     						//zl
+    SlamDataPub* mpSlamDataPub;
 
     //Map
     Map* mpMap;
