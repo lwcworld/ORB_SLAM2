@@ -40,6 +40,23 @@ endif()
 
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  rospy
+  std_msgs
+  cv_bridge
+  image_transport
+  sensor_msgs
+  pcl_conversions
+  pcl_ros
+)
+#FIND_PACKAGE( PCL REQUIRED COMPONENTS common io visualization filters )
+FIND_PACKAGE( PCL REQUIRED)
+
+# PCL
+ADD_DEFINITIONS( ${PCL_DEFINITIONS} )
+INCLUDE_DIRECTORIES( ${PCL_INCLUDE_DIRS}  )
+LINK_LIBRARIES( ${PCL_LIBRARY_DIRS} )
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -66,6 +83,7 @@ src/ros_mono.cc
 
 target_link_libraries(Mono
 ${LIBS}
+${PCL_LIBRARIES}
 )
 
 # Node for monocular camera (Augmented Reality Demo)
