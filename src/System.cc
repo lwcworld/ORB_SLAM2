@@ -103,10 +103,12 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     }
     
     // Initialize the Rviz viewer and launch
-    mpSlamDataPub = new SlamDataPub(this, mpFrameDrawer, mpMapDrawer, mpTracker, strSettingsFile, mpMap);  //zl
+	mpSlamDataPub = new SlamDataPub(this, mpFrameDrawer, mpMapDrawer, mpTracker, strSettingsFile, mpMap); 
+    //mpSlamDataPub = new SlamDataPub(this, mpFrameDrawer, mpMapDrawer, mpTracker, strSettingsFile, mpMap, mpLocalMapper, NULL);  //zl
     mptSlamDataPub = new thread(&SlamDataPub::Run, mpSlamDataPub);
     mpTracker->SetSlamDataPub(mpSlamDataPub);
-    
+	mpSlamDataPub->SetTracker(mpTracker);
+    mpSlamDataPub->SetLoopClosing(mpLoopCloser);
     //Set pointers between threads
     mpTracker->SetLocalMapper(mpLocalMapper);
     mpTracker->SetLoopClosing(mpLoopCloser);

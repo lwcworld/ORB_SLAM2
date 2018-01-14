@@ -1074,6 +1074,7 @@ void Tracking::CreateNewKeyFrame()
 
     mpReferenceKF = pKF;
     mCurrentFrame.mpReferenceKF = pKF;
+	mCurrentFrame.is_keyframe = true;
 
     if(mSensor!=System::MONOCULAR)
     {

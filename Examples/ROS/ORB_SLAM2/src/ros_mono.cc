@@ -156,6 +156,7 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
 	if (pose.empty()){
         return;
 	}
+	return;
 
     //Quaternion
 	tf::Matrix3x3 tf3d;
