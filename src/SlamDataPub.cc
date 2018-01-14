@@ -123,8 +123,8 @@ void SlamDataPub::DrawFramePub()
 // 	if(mbGetNewCamPose)
 // 	{  
 	cv::Mat img = mpFrameDrawer->DrawFrame();
-	cv::imshow("Current Frame",img);
-	cv::waitKey(mT/2);
+	//cv::imshow("Current Frame",img);
+	//cv::waitKey(mT/2);
 	cvi.image = img;
 	sensor_msgs::Image im;
 	cvi.toImageMsg(im);
@@ -132,7 +132,7 @@ void SlamDataPub::DrawFramePub()
 //	}
 	if(CheckFinish())
 	    break;  
-	//usleep(1*1000); 
+	usleep(mT*1000); 
     }
  
 }
