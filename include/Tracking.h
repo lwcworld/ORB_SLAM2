@@ -80,6 +80,7 @@ public:
 
 
 public:
+
 	bool loop_detected;;
     // Tracking states
     enum eTrackingState{
