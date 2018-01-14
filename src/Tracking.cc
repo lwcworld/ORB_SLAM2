@@ -163,6 +163,10 @@ void Tracking::SetViewer(Viewer *pViewer)
     mpViewer=pViewer;
 }
 
+void Tracking::SetSlamDataPub(SlamDataPub *pSlamDataPub)
+{
+    mpSlamDataPub=pSlamDataPub;
+}
 
 cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp)
 {
@@ -432,7 +436,8 @@ void Tracking::Track()
                 mVelocity = cv::Mat();
 
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
-
+	        mpSlamDataPub->SetCurrentCameraPose(mCurrentFrame.mTcw);
+	    
             // Clean VO matches
             for(int i=0; i<mCurrentFrame.N; i++)
             {

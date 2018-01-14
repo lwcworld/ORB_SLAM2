@@ -1,13 +1,32 @@
 cmake_minimum_required(VERSION 2.8)
 project(ORB_SLAM2)
 
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  rospy
+  std_msgs
+  cv_bridge
+  image_transport
+  sensor_msgs
+  pcl_conversions
+  pcl_ros
+)
+
+#FIND_PACKAGE( PCL REQUIRED COMPONENTS common io visualization filters )
+FIND_PACKAGE( PCL REQUIRED)
+
+# PCL
+ADD_DEFINITIONS( ${PCL_DEFINITIONS} )
+INCLUDE_DIRECTORIES( ${PCL_INCLUDE_DIRS}  )
+LINK_LIBRARIES( ${PCL_LIBRARY_DIRS} )
+
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3 -march=native")
 
 # Check C++11 or C++0x support
@@ -68,6 +87,7 @@ src/KeyFrameDatabase.cc
 src/Sim3Solver.cc
 src/Initializer.cc
 src/Viewer.cc
+src/SlamDataPub.cc
 )
 
 target_link_libraries(${PROJECT_NAME}
