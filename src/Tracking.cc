@@ -164,6 +164,10 @@ void Tracking::SetViewer(Viewer *pViewer)
     mpViewer=pViewer;
 }
 
+void Tracking:: (SlamDataPub *pSlamDataPub)
+{
+    mpSlamDataPub=pSlamDataPub;
+}
 
 cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp)
 {
