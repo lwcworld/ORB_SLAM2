@@ -84,7 +84,7 @@ void SlamDataPub::MapPup()
 		cout << "Is KeyFrame:" << mpTracker->mCurrentFrame.is_keyframe << "pubCnt " << pub_count << endl;
 	if (pub_all_pts || mpLoopCloser->loop_detected || mpTracker->loop_detected) {
 		pub_all_pts = mpTracker->loop_detected = mpLoopCloser->loop_detected = false;
-		cout << "Pub All pts" <<  << endl;
+		cout << "Pub All pts" << endl;
 		geometry_msgs::PoseArray kf_pt_array;
 		vector<ORB_SLAM2::KeyFrame*> key_frames = mpMap->GetAllKeyFrames();
 		//! placeholder for number of keyframes
