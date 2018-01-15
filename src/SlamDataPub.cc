@@ -73,12 +73,18 @@ void SlamDataPub::SetTracker(Tracking *pTracker)
 void SlamDataPub::MapPup()
 {
 	int frame_id = 0;	
-	printf("Started Pub Threat\n");
+	
     while(1)
     {
-		
+		if (all_pts_pub_gap > 0 && pub_count >= all_pts_pub_gap) {
+			pub_all_pts = true;
+			pub_count = 0;
+		}
+	if(mpTracker->mCurrentFrame.is_keyframe)
+		cout << "Is KeyFrame:" << mpTracker->mCurrentFrame.is_keyframe << "pubCnt " << pub_count << endl;
 	if (pub_all_pts || mpLoopCloser->loop_detected || mpTracker->loop_detected) {
 		pub_all_pts = mpTracker->loop_detected = mpLoopCloser->loop_detected = false;
+		cout << "Pub All pts" <<  << endl;
 		geometry_msgs::PoseArray kf_pt_array;
 		vector<ORB_SLAM2::KeyFrame*> key_frames = mpMap->GetAllKeyFrames();
 		//! placeholder for number of keyframes
@@ -343,7 +349,7 @@ void SlamDataPub::Run()
     thread threadCamPosePub(&SlamDataPub::TrackingDataPub,this);   
     thread threadPointCloudPub(&SlamDataPub::PointCloudPub,this);  
     thread threadDrawFramePub(&SlamDataPub::DrawFramePub,this); 
-	//thread threadMapUp(&SlamDataPub::MapPup,this); 
+	thread threadMapUp(&SlamDataPub::MapPup,this); 
     
     threadCamPosePub.join(); 
     threadPointCloudPub.join();

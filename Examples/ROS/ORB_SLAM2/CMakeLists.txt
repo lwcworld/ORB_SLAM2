@@ -76,6 +76,8 @@ ${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM2.so
 /usr/lib/x86_64-linux-gnu/libboost_system.so
 )
 
+find_package(FLANN)
+
 # Node for monocular camera
 rosbuild_add_executable(Mono
 src/ros_mono.cc
@@ -114,4 +116,12 @@ src/ros_rgbd.cc
 target_link_libraries(RGBD
 ${LIBS}
 )
+
+#target_link_libraries(Monopub
+#${LIBS}
+#)
+# Node for Monosub2 camera
+#rosbuild_add_executable(Monosub2
+#src/ros_mono_sub_2.cc
+#)
 
