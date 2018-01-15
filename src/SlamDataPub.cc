@@ -73,6 +73,7 @@ void SlamDataPub::SetTracker(Tracking *pTracker)
 void SlamDataPub::MapPup()
 {
 	int frame_id = 0;	
+	printf("Started Pub Threat\n");
     while(1)
     {
 		
@@ -333,8 +334,8 @@ void SlamDataPub::Run()
     VehiclePath_pub_ = nh.advertise<nav_msgs::Path>("vehicle_path",1);
     AllPointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("point_cloud_all",1);
     RefPointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("point_cloud_ref",1);
-	ros::Publisher pub_pts_and_pose_ = nh.advertise<geometry_msgs::PoseArray>("pts_and_pose", 1000);
-	ros::Publisher pub_all_kf_and_pts_ = nh.advertise<geometry_msgs::PoseArray>("all_kf_and_pts", 1000);
+	pub_pts_and_pose_ = nh.advertise<geometry_msgs::PoseArray>("pts_and_pose", 1000);
+	pub_all_kf_and_pts_ = nh.advertise<geometry_msgs::PoseArray>("all_kf_and_pts", 1000);
     
     image_transport::ImageTransport it_(nh);
     DrawFrame_pub_ = it_.advertise("/frame_now", 1);
@@ -342,7 +343,7 @@ void SlamDataPub::Run()
     thread threadCamPosePub(&SlamDataPub::TrackingDataPub,this);   
     thread threadPointCloudPub(&SlamDataPub::PointCloudPub,this);  
     thread threadDrawFramePub(&SlamDataPub::DrawFramePub,this); 
-	thread threadMapUp(&SlamDataPub::MapPup,this); 
+	//thread threadMapUp(&SlamDataPub::MapPup,this); 
     
     threadCamPosePub.join(); 
     threadPointCloudPub.join();
@@ -444,7 +445,7 @@ void SlamDataPub::GetCurrentROSCameraMatrix(geometry_msgs::PoseStamped &cam_pose
 	  cam_pose.pose.orientation.z = q.z();
 	  cam_pose.pose.orientation.w = q.w();
 	  
-	  cam_pose.header.frame_id = "ground";
+	  cam_pose.header.frame_id = "2ground";
 	  cam_pose.header.stamp = ros::Time::now();  
 	  
 	  mbGetNewCamPose = false;

@@ -74,11 +74,16 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
+	std::chrono::steady_clock::time_point t_ext1 = std::chrono::steady_clock::now();
     // ORB extraction
     thread threadLeft(&Frame::ExtractORB,this,0,imLeft);
     thread threadRight(&Frame::ExtractORB,this,1,imRight);
     threadLeft.join();
     threadRight.join();
+
+	std::chrono::steady_clock::time_point t_ext2 = std::chrono::steady_clock::now();
+    double t_extract= std::chrono::duration_cast<std::chrono::duration<double> >(t_ext2 - t_ext1).count();
+    cout << "t_extract = " << t_extract << "s, frequence = " << 1/t_extract << "Hz"  << endl;
 
     N = mvKeys.size();
 

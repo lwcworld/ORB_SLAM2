@@ -82,7 +82,7 @@ cv::Mat FrameDrawer::DrawFrame()
             if(vMatches[i]>=0)
             {
                 cv::line(im,vIniKeys[i].pt,vCurrentKeys[vMatches[i]].pt,
-                        cv::Scalar(0,255,0));
+                        cv::Scalar(0,255,255));
             }
         }        
     }
@@ -106,7 +106,7 @@ cv::Mat FrameDrawer::DrawFrame()
                 if(vbMap[i])
                 {
                     cv::rectangle(im,pt1,pt2,cv::Scalar(0,255,0));
-                    cv::circle(im,vCurrentKeys[i].pt,2,cv::Scalar(0,255,0),-1);
+                    cv::circle(im,vCurrentKeys[i].pt,2,cv::Scalar(0,255,255),-1);
                     mnTracked++;
                 }
                 else // This is match to a "visual odometry" MapPoint created in the last frame
