@@ -76,8 +76,6 @@ ${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM2.so
 /usr/lib/x86_64-linux-gnu/libboost_system.so
 )
 
-find_package(FLANN)
-
 # Node for monocular camera
 rosbuild_add_executable(Mono
 src/ros_mono.cc
