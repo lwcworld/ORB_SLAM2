@@ -437,7 +437,7 @@ void Tracking::Track()
                 mVelocity = cv::Mat();
 
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
-			mpSlamDataPub->SetCurrentCameraPose(mCurrentFrame.mTcw);
+	    mpSlamDataPub->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
             // Clean VO matches
             for(int i=0; i<mCurrentFrame.N; i++)
@@ -693,7 +693,7 @@ void Tracking::CreateInitialMapMonocular()
 
     // Set median depth to 1
     float medianDepth = pKFini->ComputeSceneMedianDepth(2);
-    float invMedianDepth = 1.0f/medianDepth;
+    float invMedianDepth = 1.0f/medianDepth*5;
 
     if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<100)
     {
