@@ -16,6 +16,10 @@
 
 #include <mutex>
 
+#define publisherRate 10
+
+#define TFNAME "odom"
+
 namespace ORB_SLAM2
 {
 
@@ -40,7 +44,11 @@ SlamDataPub::SlamDataPub(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *
     }
     
     // camera under ground      
-    mInitCam2Ground_R << 1,0,0,0,0,1,0,-1,0;  // camera coordinate represented in ground coordinate system
+    //smInitCam2Ground_R << 1,0,0,0,0,1,0,-1,0;  // camera coordinate represented in ground coordinate system
+    mInitCam2Ground_R <<  0,0,1,
+			  -1,0,0,
+			  0,-1,0;  // camera coordinate represented in ground coordinate system
+   
     mInitCam2Ground_t.setZero();     
     mTrans_cam2ground.setIdentity();   // Set to Identity to make bottom row of Matrix 0,0,0,1
     mTrans_cam2ground.block<3,3>(0,0) = mInitCam2Ground_R;
@@ -48,6 +56,7 @@ SlamDataPub::SlamDataPub(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *
 
     // camera under vehicle, 
     mCam2Vehicle_R << 0,0,1,-1,0,0,0,-1,0;  // camera coordinate represented in vehicle coordinate system
+    //mCam2Vehicle_R << 0,0,1,1,0,0,0,-1,0;  // camera coordinate represented in vehicle coordinate system
     mCam2Vehicle_t.setZero();
     mTrans_cam2vehicle.setIdentity();   // Set to Identity to make bottom row of Matrix 0,0,0,1
     mTrans_cam2vehicle.block<3,3>(0,0) = mCam2Vehicle_R;
@@ -81,7 +90,7 @@ void SlamDataPub::MapPup()
 			pub_count = 0;
 		}
 	if(mpTracker->mCurrentFrame.is_keyframe)
-		cout << "Is KeyFrame:" << mpTracker->mCurrentFrame.is_keyframe << "pubCnt " << pub_count << endl;
+		//cout << "Is KeyFrame:" << mpTracker->mCurrentFrame.is_keyframe << "pubCnt " << pub_count << endl;
 	if (pub_all_pts || mpLoopCloser->loop_detected || mpTracker->loop_detected) {
 		pub_all_pts = mpTracker->loop_detected = mpLoopCloser->loop_detected = false;
 		cout << "Pub All pts" << endl;
@@ -242,7 +251,7 @@ void SlamDataPub::MapPup()
 	}
 	if(CheckFinish())
 	      break;  
-	  usleep(mT*1000/2); 
+	  usleep(mT*1000/2*publisherRate); 
     }
     
 }
@@ -275,7 +284,7 @@ void SlamDataPub::TrackingDataPub()
 	      Vehicle2Ground_broadcaster_.sendTransform(
 		  tf::StampedTransform(
 		  tf::Transform(tf::Quaternion(tf_q_x,tf_q_y,tf_q_z,tf_q_w), tf::Vector3(tf_x, tf_y, tf_z)),
-		  ros::Time::now(),"ground", "vehicle"));   
+		  ros::Time::now(),TFNAME, "vehicle"));   
 	    
 	  }
 	  if(CheckFinish())
@@ -299,7 +308,7 @@ void SlamDataPub::PointCloudPub()
 // 	  }
 	  if(CheckFinish())
 	      break;  
-	  usleep(mT*1000/2); 
+	  usleep(mT*1000/2*publisherRate); 
     }
     
 }
@@ -324,7 +333,7 @@ void SlamDataPub::DrawFramePub()
 //	}
 	if(CheckFinish())
 	    break;  
-	usleep(mT*1000); 
+	usleep(mT*1000*publisherRate); 
     }
  
 }
@@ -334,17 +343,17 @@ void SlamDataPub::Run()
     mbFinished = false;
     mbStopped = false;
 
-    CamPose_pub_ = nh.advertise<geometry_msgs::PoseStamped >("camera_pose",1);
-    VehiclePose_pub_ = nh.advertise<geometry_msgs::PoseStamped >("vehicle_pose",1);
-    CamPath_pub_ = nh.advertise<nav_msgs::Path>("camera_path",1);
-    VehiclePath_pub_ = nh.advertise<nav_msgs::Path>("vehicle_path",1);
-    AllPointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("point_cloud_all",1);
-    RefPointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("point_cloud_ref",1);
-	pub_pts_and_pose_ = nh.advertise<geometry_msgs::PoseArray>("pts_and_pose", 1000);
-	pub_all_kf_and_pts_ = nh.advertise<geometry_msgs::PoseArray>("all_kf_and_pts", 1000);
+    CamPose_pub_ = nh.advertise<geometry_msgs::PoseStamped >("orb/camera_pose",1);
+    VehiclePose_pub_ = nh.advertise<geometry_msgs::PoseStamped >("orb/vehicle_pose",1);
+    CamPath_pub_ = nh.advertise<nav_msgs::Path>("orb/camera_path",1);
+    VehiclePath_pub_ = nh.advertise<nav_msgs::Path>("orb/vehicle_path",1);
+    AllPointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("orb/point_cloud_all",1);
+    RefPointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("orb/point_cloud_ref",1);
+    pub_pts_and_pose_ = nh.advertise<geometry_msgs::PoseArray>("orb/pts_and_pose", 1000);
+    pub_all_kf_and_pts_ = nh.advertise<geometry_msgs::PoseArray>("orb/all_kf_and_pts", 1000);
     
     image_transport::ImageTransport it_(nh);
-    DrawFrame_pub_ = it_.advertise("/frame_now", 1);
+    DrawFrame_pub_ = it_.advertise("/orb/frame_now", 1);
        
     thread threadCamPosePub(&SlamDataPub::TrackingDataPub,this);   
     thread threadPointCloudPub(&SlamDataPub::PointCloudPub,this);  
@@ -481,7 +490,7 @@ void SlamDataPub::GetCurrentROSVehicleMatrix(geometry_msgs::PoseStamped &vehicle
 	vehicle_pose.pose.orientation.z = q.z();
 	vehicle_pose.pose.orientation.w = q.w();
 	
-	vehicle_pose.header.frame_id = "ground";
+	vehicle_pose.header.frame_id = TFNAME;
 	vehicle_pose.header.stamp = ros::Time::now();  	
       }
 }
@@ -531,9 +540,9 @@ void SlamDataPub::GetCurrentROSTrajectories(nav_msgs::Path &cam_path, nav_msgs::
 	      vehicle_path_temp.poses.push_back(vehicle_pose);
 	      cam_path_temp.poses.push_back(cam_pose);	     
 	  }
- 	  cam_path_temp.header.frame_id = "ground";
+ 	  cam_path_temp.header.frame_id = TFNAME;
  	  cam_path_temp.header.stamp = ros::Time::now();   
-	  vehicle_path_temp.header.frame_id = "ground";
+	  vehicle_path_temp.header.frame_id = TFNAME;
 	  vehicle_path_temp.header.stamp = ros::Time::now(); 
 	  
 	  cam_path = cam_path_temp;
@@ -578,7 +587,7 @@ void SlamDataPub::GetCurrentROSAllPointCloud( sensor_msgs::PointCloud2 &all_poin
     pcl::PCLPointCloud2 pcl_pc1;
     pcl::toPCLPointCloud2(*cloud_all, pcl_pc1);    // pcl::PointXYZRGBA -> pcl::PCLPointCloud2
     pcl_conversions::fromPCL(pcl_pc1, all_point_cloud);  // pcl::PCLPointCloud2 -> sensor_msgs::PointCloud2
-    all_point_cloud.header.frame_id = "ground";  
+    all_point_cloud.header.frame_id = TFNAME;  
     all_point_cloud.header.stamp = ros::Time::now();   
   
     for(set<MapPoint*>::iterator sit=spRefMPs.begin(), send=spRefMPs.end(); sit!=send; sit++)
@@ -605,7 +614,7 @@ void SlamDataPub::GetCurrentROSAllPointCloud( sensor_msgs::PointCloud2 &all_poin
     pcl::PCLPointCloud2 pcl_pc2;
     pcl::toPCLPointCloud2(*cloud_ref, pcl_pc2); // pcl::PointXYZRGBA -> pcl::PCLPointCloud2
     pcl_conversions::fromPCL(pcl_pc2, ref_point_cloud);  // pcl::PCLPointCloud2 -> sensor_msgs::PointCloud2
-    ref_point_cloud.header.frame_id = "ground";
+    ref_point_cloud.header.frame_id = TFNAME;
     ref_point_cloud.header.stamp = ros::Time::now();   
 
 }
