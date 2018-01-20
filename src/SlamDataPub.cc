@@ -251,7 +251,7 @@ void SlamDataPub::MapPup()
 	}
 	if(CheckFinish())
 	      break;  
-	  usleep(mT*1000/2*publisherRate); 
+	  usleep(mT*1000/2); 
     }
     
 }

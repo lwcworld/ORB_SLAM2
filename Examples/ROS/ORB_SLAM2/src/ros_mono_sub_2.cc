@@ -22,6 +22,10 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <Converter.h>
 
+#include "tf/tf.h"
+
+#include <tf/transform_broadcaster.h>
+
 // parameters
 float scale_factor = 3;
 float resize_factor = 5;
@@ -52,6 +56,8 @@ nav_msgs::OccupancyGrid grid_map_msg;
 
 float kf_pos_x, kf_pos_z;
 int kf_pos_grid_x, kf_pos_grid_z;
+
+tf::TransformBroadcaster *broadcaster;
 
 using namespace std;
 
@@ -103,6 +109,9 @@ int main(int argc, char **argv){
 	grid_map_msg.info.height = h;
 	grid_map_msg.info.resolution = 1.0/scale_factor;
 	grid_map_msg.info.origin.orientation.w = 1;
+	grid_map_msg.info.origin.position.x = 0;
+	grid_map_msg.info.origin.position.y = 0;
+	grid_map_msg.info.origin.position.z = 0;
 
 	grid_map_int = cv::Mat(h, w, CV_8SC1, (char*)(grid_map_msg.data.data()));
 
@@ -121,11 +130,11 @@ int main(int argc, char **argv){
 	printf("norm_factor_z: %f\n", norm_factor_z);
 
 	ros::NodeHandle nodeHandler;
-	ros::Subscriber sub_pts_and_pose = nodeHandler.subscribe("pts_and_pose", 1000, ptCallback);
-	ros::Subscriber sub_all_kf_and_pts = nodeHandler.subscribe("all_kf_and_pts", 1000, loopClosingCallback);
+	ros::Subscriber sub_pts_and_pose = nodeHandler.subscribe("orb/pts_and_pose", 1000, ptCallback);
+	ros::Subscriber sub_all_kf_and_pts = nodeHandler.subscribe("orb/all_kf_and_pts", 1000, loopClosingCallback);
 	pub_grid_map = nodeHandler.advertise<nav_msgs::OccupancyGrid>("grid_map", 1000);
-
-
+	broadcaster = new tf::TransformBroadcaster();
+ 
 	//ros::Subscriber sub_cloud = nodeHandler.subscribe("cloud_in", 1000, cloudCallback);
 	//ros::Subscriber sub_kf = nodeHandler.subscribe("camera_pose", 1000, kfCallback);
 	//ros::Subscriber sub = nodeHandler.subscribe("/camera/image_raw", 1, &ImageGrabber::GrabImage, &igb);
@@ -162,8 +171,8 @@ void saveMap(unsigned int id) {
 
 }
 void ptCallback(const geometry_msgs::PoseArray::ConstPtr& pts_and_pose){
-	//ROS_INFO("Received points and pose: [%s]{%d}", pts_and_pose->header.frame_id.c_str(),
-	//	pts_and_pose->header.seq);
+	ROS_INFO("Received points and pose: [%s]{%d}", pts_and_pose->header.frame_id.c_str(),
+		pts_and_pose->header.seq);
 	//if (pts_and_pose->header.seq==0) {
 	//	cv::destroyAllWindows();
 	//	saveMap();
@@ -185,7 +194,16 @@ void ptCallback(const geometry_msgs::PoseArray::ConstPtr& pts_and_pose){
 	updateGridMap(pts_and_pose);
 
 	grid_map_msg.info.map_load_time = ros::Time::now();
+
 	pub_grid_map.publish(grid_map_msg);
+
+	geometry_msgs::Quaternion odom_quat;	
+	odom_quat = tf::createQuaternionMsgFromRollPitchYaw(0.0,0.0,-M_PI/2);
+		
+	broadcaster->sendTransform(
+	tf::StampedTransform(
+	tf::Transform(tf::Quaternion(odom_quat.x, odom_quat.y, odom_quat.z, odom_quat.w), tf::Vector3(-12., 25.0, 0.0)),
+	ros::Time::now(),"odom", "map"));
 }
 void loopClosingCallback(const geometry_msgs::PoseArray::ConstPtr& all_kf_and_pts){
 	//ROS_INFO("Received points and pose: [%s]{%d}", pts_and_pose->header.frame_id.c_str(),
@@ -310,7 +328,7 @@ void updateGridMap(const geometry_msgs::PoseArray::ConstPtr& pts_and_pose){
 
 	//geometry_msgs::Point min_pt, max_pt;
 	//getMixMax(pts_and_pose, min_pt, max_pt);
-	//printf("max_pt: %f, %f\t min_pt: %f, %f\n", max_pt.x*scale_factor, max_pt.z*scale_factor, 
+	//sprintf("max_pt: %f, %f\t min_pt: %f, %f\n", max_pt.x*scale_factor, max_pt.z*scale_factor, 
 	//	min_pt.x*scale_factor, min_pt.z*scale_factor);
 
 	//double grid_res_x = max_pt.x - min_pt.x, grid_res_z = max_pt.z - min_pt.z;
@@ -333,12 +351,12 @@ void updateGridMap(const geometry_msgs::PoseArray::ConstPtr& pts_and_pose){
 		return;
 	++n_kf_received;
 	unsigned int n_pts = pts_and_pose->poses.size() - 1;
-	//printf("Processing key frame %u and %u points\n",n_kf_received, n_pts);
+	printf("Processing key frame %u and %u points\n",n_kf_received, n_pts);
 	processMapPts(pts_and_pose->poses, n_pts, 1, kf_pos_grid_x, kf_pos_grid_z);
 
 	getGridMap();
 	showGridMap(pts_and_pose->header.seq);
-	//cout << endl << "Grid map saved!" << endl;
+	cout << endl << "Grid map saved!" << endl;
 }
 
 void resetGridMap(const geometry_msgs::PoseArray::ConstPtr& all_kf_and_pts){
