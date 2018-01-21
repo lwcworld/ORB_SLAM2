@@ -81,8 +81,9 @@ public:
 
 public:
 
-	bool loop_detected;;
-    // Tracking states
+    bool loop_detected;
+   
+      // Tracking states
     enum eTrackingState{
         SYSTEM_NOT_READY=-1,
         NO_IMAGES_YET=0,
@@ -90,7 +91,6 @@ public:
         OK=2,
         LOST=3
     };
-
     eTrackingState mState;
     eTrackingState mLastProcessedState;
 
