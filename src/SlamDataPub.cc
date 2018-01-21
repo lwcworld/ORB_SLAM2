@@ -81,16 +81,17 @@ void SlamDataPub::SetTracker(Tracking *pTracker)
 
 void SlamDataPub::MapPup()
 {
-	int frame_id = 0;	
-	
+    int frame_id = 0;
+
     while(1)
     {
-		if (all_pts_pub_gap > 0 && pub_count >= all_pts_pub_gap) {
-			pub_all_pts = true;
-			pub_count = 0;
-		}
-	if(mpTracker->mCurrentFrame.is_keyframe)
+	if (all_pts_pub_gap > 0 && pub_count >= all_pts_pub_gap) {
+		pub_all_pts = true;
+		pub_count = 0;
+	}
+	if(mpTracker->mCurrentFrame.is_keyframe){
 		//cout << "Is KeyFrame:" << mpTracker->mCurrentFrame.is_keyframe << "pubCnt " << pub_count << endl;
+	}
 	if (pub_all_pts || mpLoopCloser->loop_detected || mpTracker->loop_detected) {
 		pub_all_pts = mpTracker->loop_detected = mpLoopCloser->loop_detected = false;
 		cout << "Pub All pts" << endl;
@@ -159,7 +160,7 @@ void SlamDataPub::MapPup()
 		printf("Publishing data for %u keyfranmes\n", n_kf);
 		pub_all_kf_and_pts_.publish(kf_pt_array);
 	}
-	else if (mpTracker->mCurrentFrame.is_keyframe) {
+	else if (mpTracker->mCurrentFrame.is_keyframe && mpTracker->mState == Tracking::OK) {
 		++pub_count;
 		mpTracker->mCurrentFrame.is_keyframe = false;
 		ORB_SLAM2::KeyFrame* pKF = mpTracker->mCurrentFrame.mpReferenceKF;
@@ -251,9 +252,9 @@ void SlamDataPub::MapPup()
 	}
 	if(CheckFinish())
 	      break;  
-	  usleep(mT*1000/2); 
-    }
-    
+	
+	usleep(mT*1000/2); 
+    }   
 }
 
 void SlamDataPub::TrackingDataPub()
@@ -263,7 +264,7 @@ void SlamDataPub::TrackingDataPub()
     nav_msgs::Path cameraPath, vehiclePath;
     while(1)
     { 
-	  if(mbGetNewCamPose)
+	  if(mbGetNewCamPose && mpTracker->mState == Tracking::OK)
 	  {
 	      GetCurrentROSCameraMatrix(camPose2Ground);
 	      GetCurrentROSVehicleMatrix(vehiclePose2Ground);
@@ -298,19 +299,17 @@ void SlamDataPub::PointCloudPub()
 {
     sensor_msgs::PointCloud2 allMapPoints;
     sensor_msgs::PointCloud2 referenceMapPoints;
-    while(1)
-    {
-// 	  if(mbGetNewCamPose)
-// 	  {
-	      GetCurrentROSAllPointCloud(allMapPoints, referenceMapPoints);
-	      AllPointCloud_pub_.publish(allMapPoints);
-	      RefPointCloud_pub_.publish(referenceMapPoints);
-// 	  }
-	  if(CheckFinish())
-	      break;  
-	  usleep(mT*1000/2*publisherRate); 
+    while (1) {
+        if (mbGetNewCamPose && mpTracker->mState == Tracking::OK) {
+            GetCurrentROSAllPointCloud(allMapPoints, referenceMapPoints);
+            AllPointCloud_pub_.publish(allMapPoints);
+            RefPointCloud_pub_.publish(referenceMapPoints);
+        }
+        if (CheckFinish())
+            break;
+        usleep(mT * 1000 / 2 * publisherRate);
     }
-    
+
 }
 
 void SlamDataPub::DrawFramePub()
@@ -321,8 +320,8 @@ void SlamDataPub::DrawFramePub()
     cvi.header.stamp = ros::Time::now();
     while(1)
     {
-// 	if(mbGetNewCamPose)
-// 	{  
+ //	if(mbGetNewCamPose && mpTracker->mState == Tracking::OK)
+ //	{  
 	cv::Mat img = mpFrameDrawer->DrawFrame();
 	//cv::imshow("Current Frame",img);
 	//cv::waitKey(mT/2);
@@ -331,8 +330,9 @@ void SlamDataPub::DrawFramePub()
 	cvi.toImageMsg(im);
 	DrawFrame_pub_.publish(im);
 //	}
-	if(CheckFinish())
+	if(CheckFinish()){
 	    break;  
+	}
 	usleep(mT*1000*publisherRate); 
     }
  

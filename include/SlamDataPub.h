@@ -88,9 +88,9 @@ SlamDataPub(System* pSystem, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, T
 
     void SetCurrentCameraPose(const cv::Mat &Tcw);
 
-	void SetLoopClosing(LoopClosing *pLoopClosing);
+    void SetLoopClosing(LoopClosing *pLoopClosing);
 
-	void SetTracker(Tracking *pTracker);
+    void SetTracker(Tracking *pTracker);
     
 private:
 
@@ -101,8 +101,8 @@ private:
     MapDrawer* mpMapDrawer;
     Tracking* mpTracker;
     Map* mpMap;
-	LocalMapping* mpLocalMapper;
-	LoopClosing* mpLoopCloser;
+    LocalMapping* mpLocalMapper;
+    LoopClosing* mpLoopCloser;
 
     // 1/fps in ms
     double mT;
@@ -128,8 +128,8 @@ private:
     ros::Publisher VehiclePath_pub_;
     ros::Publisher AllPointCloud_pub_;
     ros::Publisher RefPointCloud_pub_;
-	ros::Publisher pub_pts_and_pose_; 
-	ros::Publisher pub_all_kf_and_pts_;
+    ros::Publisher pub_pts_and_pose_; 
+    ros::Publisher pub_all_kf_and_pts_;
     
     image_transport::Publisher DrawFrame_pub_;
     tf::TransformBroadcaster Vehicle2Ground_broadcaster_;
@@ -149,22 +149,22 @@ private:
     
     void DrawFramePub();
 
-	void MapPup();
+    void MapPup();
     
     Eigen::Matrix3f mInitCam2Ground_R;
     Eigen::Vector3f mInitCam2Ground_t;
-    Eigen::Matrix4f mTrans_cam2ground;   //calibration
+    Eigen::Matrix4f mTrans_cam2ground;	//calibration
     
-    Eigen::Matrix3f mCam2Vehicle_R;  // camera is stationary to vehicle
+    Eigen::Matrix3f mCam2Vehicle_R;	// camera is stationary to vehicle
     Eigen::Vector3f mCam2Vehicle_t;
-    Eigen::Matrix4f mTrans_cam2vehicle;    //
+    Eigen::Matrix4f mTrans_cam2vehicle;
 
     Eigen::Matrix4f mCam2GroundNow_T;   
     Eigen::Matrix4f mVehicle2GroundNow_T;  
 
-	int all_pts_pub_gap;
-	int pub_count; 
-	bool pub_all_pts;
+    int all_pts_pub_gap;
+    int pub_count; 
+    bool pub_all_pts;
     
 };
 

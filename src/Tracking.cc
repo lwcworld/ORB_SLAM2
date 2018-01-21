@@ -693,7 +693,7 @@ void Tracking::CreateInitialMapMonocular()
 
     // Set median depth to 1
     float medianDepth = pKFini->ComputeSceneMedianDepth(2);
-    float invMedianDepth = 1.0f/medianDepth*5;
+    float invMedianDepth = 1.0f/medianDepth*1;
 
     if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<100)
     {
