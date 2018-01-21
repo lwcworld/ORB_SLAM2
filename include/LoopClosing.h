@@ -80,7 +80,7 @@ public:
 
     bool isFinished();
 
-	bool loop_detected;
+    bool loop_detected;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
