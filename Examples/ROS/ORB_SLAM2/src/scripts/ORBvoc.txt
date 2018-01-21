@@ -1,0 +1,1 @@
+/home/roman/workspace/ORB_SLAM2/Vocabulary/ORBvoc.txt
