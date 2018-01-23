@@ -55,10 +55,13 @@ public:
     bool isStopped();
 
     void Release();
+    
+    void setReset(bool reset);
 
 private:
 
     bool Stop();
+    bool resetFromROS;
 
     System* mpSystem;
     FrameDrawer* mpFrameDrawer;

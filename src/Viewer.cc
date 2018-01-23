@@ -27,7 +27,7 @@ namespace ORB_SLAM2
 {
 
 Viewer::Viewer(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Tracking *pTracking, const string &strSettingPath):
-    mpSystem(pSystem), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking),
+    resetFromROS(false), mpSystem(pSystem), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking),
     mbFinishRequested(false), mbFinished(true), mbStopped(true), mbStopRequested(false)
 {
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
@@ -138,7 +138,7 @@ void Viewer::Run()
         cv::imshow("ORB-SLAM2: Current Frame",im);
         cv::waitKey(mT);
 
-        if(menuReset)
+        if(menuReset || mpSystem->GetResetFromROS())
         {
             menuShowGraph = true;
             menuShowKeyFrames = true;
@@ -149,8 +149,11 @@ void Viewer::Run()
             bLocalizationMode = false;
             bFollow = true;
             menuFollowCamera = true;
-            mpSystem->Reset();
+            if(menuReset){
+                mpSystem->Reset();
+            }
             menuReset = false;
+            resetFromROS = false;
         }
 
         if(Stop())
@@ -166,6 +169,11 @@ void Viewer::Run()
     }
 
     SetFinish();
+}
+
+void Viewer::setReset(bool reset)
+{
+    resetFromROS = reset;
 }
 
 void Viewer::RequestFinish()

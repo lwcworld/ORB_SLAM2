@@ -262,6 +262,7 @@ void SlamDataPub::TrackingDataPub()
     geometry_msgs::PoseStamped camPose2Ground;  
     geometry_msgs::PoseStamped vehiclePose2Ground;  
     nav_msgs::Path cameraPath, vehiclePath;
+    int32_t cnt = 0;
     while(1)
     { 
 	  if(mbGetNewCamPose && mpTracker->mState == Tracking::OK)
@@ -272,8 +273,11 @@ void SlamDataPub::TrackingDataPub()
 	      CamPose_pub_.publish(camPose2Ground);  
 	      VehiclePose_pub_.publish(vehiclePose2Ground);
 	      CamPath_pub_.publish(cameraPath);   // KeyFrames
-	      VehiclePath_pub_.publish(vehiclePath);
-	      
+              if((cnt % 10) == 0) {
+                VehiclePath_pub_.publish(vehiclePath);
+                cnt = 0;
+              }
+              cnt++;
 	      float tf_q_x = vehiclePose2Ground.pose.orientation.x;
 	      float tf_q_y = vehiclePose2Ground.pose.orientation.y;
 	      float tf_q_z = vehiclePose2Ground.pose.orientation.z;
@@ -281,7 +285,6 @@ void SlamDataPub::TrackingDataPub()
 	      float tf_x = vehiclePose2Ground.pose.position.x;
 	      float tf_y = vehiclePose2Ground.pose.position.y;
 	      float tf_z = vehiclePose2Ground.pose.position.z;
-	      
 	      Vehicle2Ground_broadcaster_.sendTransform(
 		  tf::StampedTransform(
 		  tf::Transform(tf::Quaternion(tf_q_x,tf_q_y,tf_q_z,tf_q_w), tf::Vector3(tf_x, tf_y, tf_z)),
@@ -351,6 +354,7 @@ void SlamDataPub::Run()
     RefPointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("orb/point_cloud_ref",1);
     pub_pts_and_pose_ = nh.advertise<geometry_msgs::PoseArray>("orb/pts_and_pose", 1000);
     pub_all_kf_and_pts_ = nh.advertise<geometry_msgs::PoseArray>("orb/all_kf_and_pts", 1000);
+    sub_joy_ = nh.subscribe<sensor_msgs::Joy>("joy", 10, &SlamDataPub::joyCallback, this);
     
     image_transport::ImageTransport it_(nh);
     DrawFrame_pub_ = it_.advertise("/orb/frame_now", 1);
@@ -358,12 +362,21 @@ void SlamDataPub::Run()
     thread threadCamPosePub(&SlamDataPub::TrackingDataPub,this);   
     thread threadPointCloudPub(&SlamDataPub::PointCloudPub,this);  
     thread threadDrawFramePub(&SlamDataPub::DrawFramePub,this); 
-	thread threadMapUp(&SlamDataPub::MapPup,this); 
+    thread threadMapUp(&SlamDataPub::MapPup,this); 
     
     threadCamPosePub.join(); 
     threadPointCloudPub.join();
 
     SetFinish();
+}
+
+void SlamDataPub::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
+{
+    //joy_msg = joy;
+    cout << "Joy arrived:" << joy->buttons.at(5) << endl;
+    if (joy->buttons.at(5)){
+        mpSystem->Reset();
+    }
 }
 
 void SlamDataPub::RequestFinish()

@@ -300,10 +300,33 @@ bool System::MapChanged()
         return false;
 }
 
-void System::Reset()
+bool System::GetResetFromROS()
 {
-    unique_lock<mutex> lock(mMutexReset);
+    bool tempReset = false;
+    {
+        unique_lock<mutex> lock(mMutexResetFromRos);
+        if(resetFromROS)
+        {
+            tempReset = true;
+            resetFromROS = false;
+        }
+        else if (!resetFromROS)
+        {
+            tempReset = false;
+        }
+    }
+    return tempReset;
+}
+
+void System::Reset()
+{   
+    mMutexResetFromRos.lock();
+    mMutexReset.lock();
+    resetFromROS = true;
+    //unique_lock<mutex> lock(mMutexReset);
     mbReset = true;
+    mMutexResetFromRos.unlock();
+    mMutexReset.unlock();
 }
 
 void System::Shutdown()

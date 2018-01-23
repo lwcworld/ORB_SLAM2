@@ -129,6 +129,9 @@ public:
     int GetTrackingState();
     std::vector<MapPoint*> GetTrackedMapPoints();
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
+    
+    // ROS stuff
+    bool GetResetFromROS();
 
 private:
 
@@ -185,6 +188,10 @@ private:
     std::vector<MapPoint*> mTrackedMapPoints;
     std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
     std::mutex mMutexState;
+    
+    bool resetFromROS;
+    std::mutex mMutexResetFromRos;
+    
 };
 
 }// namespace ORB_SLAM

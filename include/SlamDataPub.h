@@ -16,6 +16,7 @@
 
 #include <tf/transform_broadcaster.h>
 #include <nav_msgs/Path.h>
+#include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -130,6 +131,7 @@ private:
     ros::Publisher RefPointCloud_pub_;
     ros::Publisher pub_pts_and_pose_; 
     ros::Publisher pub_all_kf_and_pts_;
+    ros::Subscriber sub_joy_;
     
     image_transport::Publisher DrawFrame_pub_;
     tf::TransformBroadcaster Vehicle2Ground_broadcaster_;
@@ -151,6 +153,8 @@ private:
 
     void MapPup();
     
+    void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
+    
     Eigen::Matrix3f mInitCam2Ground_R;
     Eigen::Vector3f mInitCam2Ground_t;
     Eigen::Matrix4f mTrans_cam2ground;	//calibration
@@ -165,6 +169,7 @@ private:
     int all_pts_pub_gap;
     int pub_count; 
     bool pub_all_pts;
+    sensor_msgs::Joy joy_msg;
     
 };
 
