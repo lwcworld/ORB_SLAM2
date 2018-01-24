@@ -1,5 +1,7 @@
 echo "Building ROS nodes"
 
+./creatSwapfile.sh
+
 cd Examples/ROS/ORB_SLAM2
 mkdir build
 cd build
