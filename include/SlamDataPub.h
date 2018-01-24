@@ -25,6 +25,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/PoseArray.h"
+#include <std_msgs/Int8.h>
 
 //#include <pcl/visualization/cloud_viewer.h> 
 #include <pcl/io/pcd_io.h>
@@ -131,6 +132,7 @@ private:
     ros::Publisher RefPointCloud_pub_;
     ros::Publisher pub_pts_and_pose_; 
     ros::Publisher pub_all_kf_and_pts_;
+    ros::Publisher orbSlamStatus_pub_;
     ros::Subscriber sub_joy_;
     
     image_transport::Publisher DrawFrame_pub_;

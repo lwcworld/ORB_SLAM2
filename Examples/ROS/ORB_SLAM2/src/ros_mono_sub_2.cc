@@ -156,7 +156,7 @@ void kfCallback(const geometry_msgs::PoseStamped::ConstPtr& camera_pose){
 		camera_pose->header.seq);
 }
 void saveMap(unsigned int id) {
-	printf("saving maps with id: %u\n", id);
+	//sprintf("saving maps with id: %u\n", id);
 	mkdir("results", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	if (id > 0) {
 		cv::imwrite("results//grid_map_" + to_string(id) + ".jpg", grid_map);
@@ -171,8 +171,8 @@ void saveMap(unsigned int id) {
 
 }
 void ptCallback(const geometry_msgs::PoseArray::ConstPtr& pts_and_pose){
-	ROS_INFO("Received points and pose: [%s]{%d}", pts_and_pose->header.frame_id.c_str(),
-		pts_and_pose->header.seq);
+	//ROS_INFO("Received points and pose: [%s]{%d}", pts_and_pose->header.frame_id.c_str(),
+	//	pts_and_pose->header.seq);
 	//if (pts_and_pose->header.seq==0) {
 	//	cv::destroyAllWindows();
 	//	saveMap();

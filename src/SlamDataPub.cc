@@ -259,43 +259,64 @@ void SlamDataPub::MapPup()
 
 void SlamDataPub::TrackingDataPub()
 {
-    geometry_msgs::PoseStamped camPose2Ground;  
-    geometry_msgs::PoseStamped vehiclePose2Ground;  
+    geometry_msgs::PoseStamped camPose2Ground;
+    geometry_msgs::PoseStamped vehiclePose2Ground;
     nav_msgs::Path cameraPath, vehiclePath;
+    std_msgs::Int8 msgStautsOrbSlam;
     int32_t cnt = 0;
-    while(1)
-    { 
-	  if(mbGetNewCamPose && mpTracker->mState == Tracking::OK)
-	  {
-	      GetCurrentROSCameraMatrix(camPose2Ground);
-	      GetCurrentROSVehicleMatrix(vehiclePose2Ground);
-	      GetCurrentROSTrajectories(cameraPath, vehiclePath);
-	      CamPose_pub_.publish(camPose2Ground);  
-	      VehiclePose_pub_.publish(vehiclePose2Ground);
-	      CamPath_pub_.publish(cameraPath);   // KeyFrames
-              if((cnt % 10) == 0) {
+    while (1) {
+        switch (mpTracker->mState) {
+        case Tracking::SYSTEM_NOT_READY:
+            msgStautsOrbSlam.data = -1;
+            break;
+        case Tracking::NO_IMAGES_YET:
+            msgStautsOrbSlam.data = 0;
+            break;
+        case Tracking::NOT_INITIALIZED:
+            msgStautsOrbSlam.data = 1;
+            break;
+        case Tracking::OK:
+            msgStautsOrbSlam.data = 2;
+            break;
+        case Tracking::LOST:
+            msgStautsOrbSlam.data = 3;
+            break;
+        default:
+            msgStautsOrbSlam.data = -1;
+        }
+        
+        orbSlamStatus_pub_.publish(msgStautsOrbSlam);
+        
+        if (mbGetNewCamPose && mpTracker->mState == Tracking::OK) {
+            GetCurrentROSCameraMatrix(camPose2Ground);
+            GetCurrentROSVehicleMatrix(vehiclePose2Ground);
+            GetCurrentROSTrajectories(cameraPath, vehiclePath);
+            CamPose_pub_.publish(camPose2Ground);
+            VehiclePose_pub_.publish(vehiclePose2Ground);
+            CamPath_pub_.publish(cameraPath);   // KeyFrames
+            if ((cnt % 10) == 0) {
                 VehiclePath_pub_.publish(vehiclePath);
                 cnt = 0;
-              }
-              cnt++;
-	      float tf_q_x = vehiclePose2Ground.pose.orientation.x;
-	      float tf_q_y = vehiclePose2Ground.pose.orientation.y;
-	      float tf_q_z = vehiclePose2Ground.pose.orientation.z;
-	      float tf_q_w = vehiclePose2Ground.pose.orientation.w;
-	      float tf_x = vehiclePose2Ground.pose.position.x;
-	      float tf_y = vehiclePose2Ground.pose.position.y;
-	      float tf_z = vehiclePose2Ground.pose.position.z;
-	      Vehicle2Ground_broadcaster_.sendTransform(
-		  tf::StampedTransform(
-		  tf::Transform(tf::Quaternion(tf_q_x,tf_q_y,tf_q_z,tf_q_w), tf::Vector3(tf_x, tf_y, tf_z)),
-		  ros::Time::now(),TFNAME, "vehicle"));   
-	    
-	  }
-	  if(CheckFinish())
-	      break;  
-	   usleep(1*1000); 
+            }
+            cnt++;
+            float tf_q_x = vehiclePose2Ground.pose.orientation.x;
+            float tf_q_y = vehiclePose2Ground.pose.orientation.y;
+            float tf_q_z = vehiclePose2Ground.pose.orientation.z;
+            float tf_q_w = vehiclePose2Ground.pose.orientation.w;
+            float tf_x = vehiclePose2Ground.pose.position.x;
+            float tf_y = vehiclePose2Ground.pose.position.y;
+            float tf_z = vehiclePose2Ground.pose.position.z;
+            Vehicle2Ground_broadcaster_.sendTransform(
+                tf::StampedTransform(
+                    tf::Transform(tf::Quaternion(tf_q_x, tf_q_y, tf_q_z, tf_q_w), tf::Vector3(tf_x, tf_y, tf_z)),
+                    ros::Time::now(), TFNAME, "vehicle"));
+
+        }
+        if (CheckFinish())
+            break;
+        usleep(1 * 1000);
     }
-   
+
 }
 
 void SlamDataPub::PointCloudPub()
@@ -356,6 +377,8 @@ void SlamDataPub::Run()
     pub_all_kf_and_pts_ = nh.advertise<geometry_msgs::PoseArray>("orb/all_kf_and_pts", 1000);
     sub_joy_ = nh.subscribe<sensor_msgs::Joy>("joy", 10, &SlamDataPub::joyCallback, this);
     
+    orbSlamStatus_pub_ = nh.advertise<std_msgs::Int8>("orb/orb_slam_status",10);
+    
     image_transport::ImageTransport it_(nh);
     DrawFrame_pub_ = it_.advertise("/orb/frame_now", 1);
        
@@ -372,8 +395,6 @@ void SlamDataPub::Run()
 
 void SlamDataPub::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {
-    //joy_msg = joy;
-    cout << "Joy arrived:" << joy->buttons.at(5) << endl;
     if (joy->buttons.at(5)){
         mpSystem->Reset();
     }
