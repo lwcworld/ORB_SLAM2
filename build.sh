@@ -1,5 +1,7 @@
 echo "Configuring and building Thirdparty/DBoW2 ..."
 
+./createSwapfile.sh
+
 cd Thirdparty/DBoW2
 mkdir build
 cd build

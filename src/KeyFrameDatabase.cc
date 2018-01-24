@@ -31,7 +31,7 @@ namespace ORB_SLAM2
 {
 
 KeyFrameDatabase::KeyFrameDatabase (const ORBVocabulary &voc):
-    mpVoc(&voc)
+    mpVoc(&voc) //Assign mpVocabulary pointer to mpVoc
 {
     mvInvertedFile.resize(voc.size());
 }

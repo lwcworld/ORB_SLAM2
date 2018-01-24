@@ -36,6 +36,7 @@
 #include<iostream>
 
 #include<mutex>
+//#include <cv_bridge/cv_bridge.h>
 
 
 using namespace std;
@@ -44,9 +45,9 @@ namespace ORB_SLAM2
 {
 
 Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor):
-    mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
+    loop_detected(0), mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
     mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer*>(NULL)), mpSystem(pSys), mpViewer(NULL),
-    mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0)
+	mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0)
 {
     // Load camera parameters from settings file
 
@@ -163,6 +164,10 @@ void Tracking::SetViewer(Viewer *pViewer)
     mpViewer=pViewer;
 }
 
+void Tracking::SetSlamDataPub(SlamDataPub *pSlamDataPub)
+{
+    mpSlamDataPub=pSlamDataPub;
+}   
 
 cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp)
 {
@@ -432,6 +437,7 @@ void Tracking::Track()
                 mVelocity = cv::Mat();
 
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+	    mpSlamDataPub->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
             // Clean VO matches
             for(int i=0; i<mCurrentFrame.N; i++)
@@ -687,7 +693,7 @@ void Tracking::CreateInitialMapMonocular()
 
     // Set median depth to 1
     float medianDepth = pKFini->ComputeSceneMedianDepth(2);
-    float invMedianDepth = 1.0f/medianDepth;
+    float invMedianDepth = 1.0f/medianDepth*1;
 
     if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<100)
     {
@@ -1069,6 +1075,7 @@ void Tracking::CreateNewKeyFrame()
 
     mpReferenceKF = pKF;
     mCurrentFrame.mpReferenceKF = pKF;
+	mCurrentFrame.is_keyframe = true;
 
     if(mSensor!=System::MONOCULAR)
     {
@@ -1586,7 +1593,6 @@ void Tracking::InformOnlyTracking(const bool &flag)
 {
     mbOnlyTracking = flag;
 }
-
 
 
 } //namespace ORB_SLAM

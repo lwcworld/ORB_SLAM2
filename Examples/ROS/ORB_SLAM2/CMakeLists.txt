@@ -12,6 +12,8 @@ MESSAGE("Build type: " ${ROS_BUILD_TYPE})
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall  -O3 -march=native")
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/")
+
 # Check C++11 or C++0x support
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -40,6 +42,23 @@ endif()
 
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  rospy
+  std_msgs
+  cv_bridge
+  image_transport
+  sensor_msgs
+  pcl_conversions
+  pcl_ros
+)
+#FIND_PACKAGE( PCL REQUIRED COMPONENTS common io visualization filters )
+FIND_PACKAGE( PCL REQUIRED)
+
+# PCL
+ADD_DEFINITIONS( ${PCL_DEFINITIONS} )
+INCLUDE_DIRECTORIES( ${PCL_INCLUDE_DIRS}  )
+LINK_LIBRARIES( ${PCL_LIBRARY_DIRS} )
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -59,6 +78,16 @@ ${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM2.so
 /usr/lib/x86_64-linux-gnu/libboost_system.so
 )
 
+find_package(FLANN)
+if(FLANN_FOUND)
+	include_directories(${FLANN_INCLUDE_DIRS})
+	set(LIBS ${LIBS} ${FLANN_LIBS})
+else()
+	message(STATUS "FLANN not found so disabling normal thresholding")
+	target_compile_definitions(Monosub PUBLIC DISABLE_FLANN)
+endif()
+ 
+
 # Node for monocular camera
 rosbuild_add_executable(Mono
 src/ros_mono.cc
@@ -66,6 +95,7 @@ src/ros_mono.cc
 
 target_link_libraries(Mono
 ${LIBS}
+${PCL_LIBRARIES}
 )
 
 # Node for monocular camera (Augmented Reality Demo)
@@ -97,3 +127,12 @@ target_link_libraries(RGBD
 ${LIBS}
 )
 
+# Node for Monosub2 camera
+rosbuild_add_executable(Monosub2
+src/ros_mono_sub_2.cc
+)
+
+
+target_link_libraries(Monosub2
+${LIBS}
+)

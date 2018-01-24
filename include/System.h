@@ -26,6 +26,10 @@
 #include<thread>
 #include<opencv2/core/core.hpp>
 
+#include<ros/ros.h>
+#include <cv_bridge/cv_bridge.h>
+
+
 #include "Tracking.h"
 #include "FrameDrawer.h"
 #include "MapDrawer.h"
@@ -35,6 +39,7 @@
 #include "KeyFrameDatabase.h"
 #include "ORBVocabulary.h"
 #include "Viewer.h"
+#include "SlamDataPub.h" //zl
 
 namespace ORB_SLAM2
 {
@@ -45,6 +50,7 @@ class Map;
 class Tracking;
 class LocalMapping;
 class LoopClosing;
+class SlamDataPub; //zl
 
 class System
 {
@@ -112,6 +118,8 @@ public:
     // See format details at: http://www.cvlibs.net/datasets/kitti/eval_odometry.php
     void SaveTrajectoryKITTI(const string &filename);
 
+    void GetCurrentTrajectory(vector<cv::Mat> &currentTrajectory);
+    
     // TODO: Save/Load functions
     // SaveMap(const string &filename);
     // LoadMap(const string &filename);
@@ -121,6 +129,9 @@ public:
     int GetTrackingState();
     std::vector<MapPoint*> GetTrackedMapPoints();
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
+    
+    // ROS stuff
+    bool GetResetFromROS();
 
 private:
 
@@ -154,11 +165,14 @@ private:
     FrameDrawer* mpFrameDrawer;
     MapDrawer* mpMapDrawer;
 
+    SlamDataPub* mpSlamDataPub;
+    
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.
     std::thread* mptLocalMapping;
     std::thread* mptLoopClosing;
     std::thread* mptViewer;
+    std::thread* mptSlamDataPub;
 
     // Reset flag
     std::mutex mMutexReset;
@@ -174,6 +188,10 @@ private:
     std::vector<MapPoint*> mTrackedMapPoints;
     std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
     std::mutex mMutexState;
+    
+    bool resetFromROS;
+    std::mutex mMutexResetFromRos;
+    
 };
 
 }// namespace ORB_SLAM
