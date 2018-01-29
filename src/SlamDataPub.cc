@@ -1,4 +1,4 @@
-/**
+        /**
 * Description: This file is part of parkingEnvSensing.
 * Date: 2017-06-20
 * Final Edit: 2017-06-20
@@ -376,6 +376,7 @@ void SlamDataPub::Run()
     pub_pts_and_pose_ = nh.advertise<geometry_msgs::PoseArray>("orb/pts_and_pose", 1000);
     pub_all_kf_and_pts_ = nh.advertise<geometry_msgs::PoseArray>("orb/all_kf_and_pts", 1000);
     sub_joy_ = nh.subscribe<sensor_msgs::Joy>("joy", 10, &SlamDataPub::joyCallback, this);
+    sub_odom_ = nh.subscribe<nav_msgs::Odometry>("odom", 100, &SlamDataPub::odomCallback, this);
     
     orbSlamStatus_pub_ = nh.advertise<std_msgs::Int8>("orb/orb_slam_status",10);
     
@@ -386,6 +387,7 @@ void SlamDataPub::Run()
     thread threadPointCloudPub(&SlamDataPub::PointCloudPub,this);  
     thread threadDrawFramePub(&SlamDataPub::DrawFramePub,this); 
     thread threadMapUp(&SlamDataPub::MapPup,this); 
+    thread threadcalcScale(&SlamDataPub::calcScale,this); 
     
     threadCamPosePub.join(); 
     threadPointCloudPub.join();
@@ -483,9 +485,10 @@ void SlamDataPub::GetCurrentROSCameraMatrix(geometry_msgs::PoseStamped &cam_pose
 	      }
 	  }
 
- 	  cam_pose.pose.position.x = cam_pose2ground(0,3);
-	  cam_pose.pose.position.y  = cam_pose2ground(1,3);
-	  cam_pose.pose.position.z  = cam_pose2ground(2,3);
+ 	  cam_pose.pose.position.x = cam_pose2ground(0,3)*scaleFactor;
+	  cam_pose.pose.position.y  = cam_pose2ground(1,3)*scaleFactor;
+	  cam_pose.pose.position.z  = cam_pose2ground(2,3)*scaleFactor;
+        
 	   
 	  Eigen::Matrix3f Rwc = cam_pose2ground.block<3,3>(0,0);
 	  Eigen::Quaternionf q(Rwc);
@@ -513,9 +516,13 @@ void SlamDataPub::GetCurrentROSVehicleMatrix(geometry_msgs::PoseStamped &vehicle
 	{
 	    mVehicle2GroundNow_T = vehicle_pose2ground;
 	}
-	vehicle_pose.pose.position.x = vehicle_pose2ground(0,3);
-	vehicle_pose.pose.position.y  = vehicle_pose2ground(1,3);
-	vehicle_pose.pose.position.z  = vehicle_pose2ground(2,3);
+	vehicle_pose.pose.position.x = vehicle_pose2ground(0,3)*scaleFactor;
+	vehicle_pose.pose.position.y  = vehicle_pose2ground(1,3)*scaleFactor;
+	vehicle_pose.pose.position.z  = vehicle_pose2ground(2,3)*scaleFactor;
+        
+        mCamPosition(0)=vehicle_pose2ground(0,3);
+        mCamPosition(1)=vehicle_pose2ground(1,3);
+        mCamPosition(2)=vehicle_pose2ground(2,3);
 	  
 	Eigen::Matrix3f Rwc = vehicle_pose2ground.block<3,3>(0,0);
 	Eigen::Quaternionf q(Rwc);
@@ -551,9 +558,9 @@ void SlamDataPub::GetCurrentROSTrajectories(nav_msgs::Path &cam_path, nav_msgs::
 	      Eigen::Matrix4f cam_pose2ground = mTrans_cam2ground * cam_pose_temp;
 	      Eigen::Matrix4f vehicle_pose2ground = cam_pose2ground * mTrans_cam2vehicle.inverse();
 	      
-	      cam_pose.pose.position.x = cam_pose2ground(0,3);
-	      cam_pose.pose.position.y = cam_pose2ground(1,3);
-	      cam_pose.pose.position.z = cam_pose2ground(2,3);
+	      cam_pose.pose.position.x = cam_pose2ground(0,3)*scaleFactor;
+	      cam_pose.pose.position.y = cam_pose2ground(1,3)*scaleFactor;
+	      cam_pose.pose.position.z = cam_pose2ground(2,3)*scaleFactor;
 	      Eigen::Matrix3f Rwc = cam_pose2ground.block<3,3>(0,0);
 	      Eigen::Quaternionf q(Rwc);	      
 	      cam_pose.pose.orientation.x = q.x();
@@ -561,9 +568,9 @@ void SlamDataPub::GetCurrentROSTrajectories(nav_msgs::Path &cam_path, nav_msgs::
 	      cam_pose.pose.orientation.z = q.z();
 	      cam_pose.pose.orientation.w = q.w();
 	      
-	      vehicle_pose.pose.position.x = vehicle_pose2ground(0,3);
-	      vehicle_pose.pose.position.y = vehicle_pose2ground(1,3);
-	      vehicle_pose.pose.position.z = vehicle_pose2ground(2,3);
+	      vehicle_pose.pose.position.x = vehicle_pose2ground(0,3)*scaleFactor;
+	      vehicle_pose.pose.position.y = vehicle_pose2ground(1,3)*scaleFactor;
+	      vehicle_pose.pose.position.z = vehicle_pose2ground(2,3)*scaleFactor;
 	      Eigen::Matrix3f Rwc2 = vehicle_pose2ground.block<3,3>(0,0);
 	      Eigen::Quaternionf q2(Rwc2);	      
 	      vehicle_pose.pose.orientation.x = q2.x();
@@ -609,9 +616,9 @@ void SlamDataPub::GetCurrentROSAllPointCloud( sensor_msgs::PointCloud2 &all_poin
 	p1_temp(2) = pos.at<float>(2);
 	p1_temp(3) = 1; 
 	p1_temp_t = mTrans_cam2ground * p1_temp;	
-	p1.x = p1_temp_t(0);
-	p1.y = p1_temp_t(1);
-	p1.z = p1_temp_t(2);
+	p1.x = p1_temp_t(0)*scaleFactor;
+	p1.y = p1_temp_t(1)*scaleFactor;
+	p1.z = p1_temp_t(2)*scaleFactor;
 	p1.b = 255;
 	p1.g = 255;
 	p1.r = 255;
@@ -636,9 +643,9 @@ void SlamDataPub::GetCurrentROSAllPointCloud( sensor_msgs::PointCloud2 &all_poin
 	p2_temp(2) = pos.at<float>(2);
 	p2_temp(3) = 1;
 	p2_temp_t = mTrans_cam2ground * p2_temp;	
-	p2.x = p2_temp_t(0);
-	p2.y = p2_temp_t(1);
-	p2.z = p2_temp_t(2);
+	p2.x = p2_temp_t(0)*scaleFactor;
+	p2.y = p2_temp_t(1)*scaleFactor;
+	p2.z = p2_temp_t(2)*scaleFactor;
 	p2.b = 0;
 	p2.g = 0;
 	p2.r = 255;
@@ -652,6 +659,65 @@ void SlamDataPub::GetCurrentROSAllPointCloud( sensor_msgs::PointCloud2 &all_poin
     ref_point_cloud.header.stamp = ros::Time::now();   
 
 }
+
+void SlamDataPub::calcScale(){
+    mOdomPositionOld.setZero();
+    Eigen::Vector3f mOdomPositionDiff;
+    Eigen::Vector3f mCamPositionDiff;
+    float distanceOdom = 0.0;
+    float distanceCam = 0.0;
+    scaleFactor = 1.0;
+    float scaleFactorAll[20]  = {0.0};
+    uint8_t cnt = 0;
+    uint8_t notNan = 0;
+    while(1) {
+        //unique_lock<mutex> lock(mMutexScale);
+        mOdomPositionDiff = mOdomPosition - mOdomPositionOld;
+        mCamPositionDiff = mCamPosition -mCamPositionOld;
+        
+        distanceOdom = mOdomPositionDiff.norm();
+        distanceCam = mCamPositionDiff.norm();
+        //sROS_INFO("Distance: [%f] [%f]",distanceOdom, distanceCam);
+        if (distanceOdom > 0.1 && !isnan(distanceOdom && cnt < 20) ){
+            mOdomPositionOld = mOdomPosition;
+            mCamPositionOld = mCamPosition;
+            scaleFactorAll[cnt] = distanceOdom / distanceCam;
+            ROS_INFO("Distance2: [%f] [%f] [%f]",distanceOdom, distanceCam, scaleFactorAll[cnt]);
+            cnt++;
+        }
+        if (cnt >= 20){
+            for (int i = 0; i<sizeof(scaleFactor);i++)
+            {   
+                if (!isnan(scaleFactorAll[i]) && !isinf(scaleFactorAll[i])){
+                    scaleFactor += scaleFactorAll[i];
+                    notNan++;
+                }
+                
+            }
+            scaleFactor = scaleFactor/((float)notNan);
+            ROS_INFO("scaleFactor: [%f]",scaleFactor);
+            //scaleFactor = 1.0;
+            break;
+        }
+        
+        if (CheckFinish())
+                break;
+        usleep(10000);
+    }
+}
+
+void SlamDataPub::odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
+   {
+     //mMutexScale.lock();
+     mOdomPosition(0) = msg->pose.pose.position.x;
+     mOdomPosition(1) = msg->pose.pose.position.y;
+     mOdomPosition(2) = msg->pose.pose.position.z;
+    // mMutexScale.unlock();
+     //ROS_INFO("Seq: [%d]", msg->header.seq);
+     //ROS_INFO("Position-> x: [%f], y: [%f], z: [%f]", msg->pose.pose.position.x,msg->pose.pose.position.y, msg->pose.pose.position.z);
+     //ROS_INFO("Orientation-> x: [%f], y: [%f], z: [%f], w: [%f]", msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
+     //ROS_INFO("Vel-> Linear: [%f], Angular: [%f]", msg->twist.twist.linear.x,msg->twist.twist.angular.z);
+   }
 
 }
 

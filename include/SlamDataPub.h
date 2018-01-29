@@ -34,6 +34,9 @@
 #include <pcl_ros/transforms.h>
 #include <pcl/point_cloud.h>  
 
+// odometry
+#include "nav_msgs/Odometry.h"
+
 
 // for mapping
 #include <ros/ros.h>
@@ -54,6 +57,7 @@
 #include <chrono>
 #include <time.h>
 
+#include <math.h>
 
 #include <mutex>
 
@@ -120,6 +124,8 @@ private:
     bool mbStopRequested;
     std::mutex mMutexStop;
     
+    std::mutex mMutexScale;
+    
     std::mutex mMutexCamera;
     cv::Mat mCameraPose;
     
@@ -134,6 +140,7 @@ private:
     ros::Publisher pub_all_kf_and_pts_;
     ros::Publisher orbSlamStatus_pub_;
     ros::Subscriber sub_joy_;
+    ros::Subscriber sub_odom_;
     
     image_transport::Publisher DrawFrame_pub_;
     tf::TransformBroadcaster Vehicle2Ground_broadcaster_;
@@ -156,6 +163,9 @@ private:
     void MapPup();
     
     void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
+    void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
+    
+    void calcScale();
     
     Eigen::Matrix3f mInitCam2Ground_R;
     Eigen::Vector3f mInitCam2Ground_t;
@@ -172,7 +182,13 @@ private:
     int pub_count; 
     bool pub_all_pts;
     sensor_msgs::Joy joy_msg;
+    float scaleFactor;
     
+    //snav_msgs::Odometry odom_msg;
+    Eigen::Vector3f mOdomPosition;
+    Eigen::Vector3f mOdomPositionOld;
+    Eigen::Vector3f mCamPosition;
+    Eigen::Vector3f mCamPositionOld;
 };
 
 }
