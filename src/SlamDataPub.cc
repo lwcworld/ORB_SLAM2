@@ -26,7 +26,7 @@ namespace ORB_SLAM2
 //SlamDataPub::SlamDataPub(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Tracking *pTracking, const string &strSettingPath, Map *pMap, LocalMapping *pLocalMapper, LoopClosing *pLoopCLoser):
 SlamDataPub::SlamDataPub(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Tracking *pTracking, const string &strSettingPath, Map *pMap): mpSystem(pSystem), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking), mpMap(pMap),
   //  mpSystem(pSystem), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking), mpMap(pMap), mpLocalMapper(pLocalMapper), mpLoopCloser(pLoopCLoser),
-    mbFinishRequested(false), mbFinished(true), mbStopped(true), mbStopRequested(false)
+    mbFinishRequested(false), mbFinished(true), mbStopped(true), mbStopRequested(false), scaleFactor(1.0)
 {
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
@@ -666,18 +666,15 @@ void SlamDataPub::calcScale(){
     Eigen::Vector3f mCamPositionDiff;
     float distanceOdom = 0.0;
     float distanceCam = 0.0;
-    scaleFactor = 1.0;
     float scaleFactorAll[20]  = {0.0};
     uint8_t cnt = 0;
     uint8_t notNan = 0;
     while(1) {
-        //unique_lock<mutex> lock(mMutexScale);
         mOdomPositionDiff = mOdomPosition - mOdomPositionOld;
         mCamPositionDiff = mCamPosition -mCamPositionOld;
         
         distanceOdom = mOdomPositionDiff.norm();
         distanceCam = mCamPositionDiff.norm();
-        //sROS_INFO("Distance: [%f] [%f]",distanceOdom, distanceCam);
         if (distanceOdom > 0.1 && !isnan(distanceOdom && cnt < 20) ){
             mOdomPositionOld = mOdomPosition;
             mCamPositionOld = mCamPosition;
@@ -686,7 +683,7 @@ void SlamDataPub::calcScale(){
             cnt++;
         }
         if (cnt >= 20){
-            for (int i = 0; i<sizeof(scaleFactor);i++)
+            for (uint8_t i = 0; i<sizeof(scaleFactor);i++)
             {   
                 if (!isnan(scaleFactorAll[i]) && !isinf(scaleFactorAll[i])){
                     scaleFactor += scaleFactorAll[i];
@@ -708,11 +705,9 @@ void SlamDataPub::calcScale(){
 
 void SlamDataPub::odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
    {
-     //mMutexScale.lock();
      mOdomPosition(0) = msg->pose.pose.position.x;
      mOdomPosition(1) = msg->pose.pose.position.y;
      mOdomPosition(2) = msg->pose.pose.position.z;
-    // mMutexScale.unlock();
      //ROS_INFO("Seq: [%d]", msg->header.seq);
      //ROS_INFO("Position-> x: [%f], y: [%f], z: [%f]", msg->pose.pose.position.x,msg->pose.pose.position.y, msg->pose.pose.position.z);
      //ROS_INFO("Orientation-> x: [%f], y: [%f], z: [%f], w: [%f]", msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
