@@ -183,6 +183,7 @@ private:
     bool pub_all_pts;
     sensor_msgs::Joy joy_msg;
     float scaleFactor;
+    bool scaleCalculated;
     
     //snav_msgs::Odometry odom_msg;
     Eigen::Vector3f mOdomPosition;

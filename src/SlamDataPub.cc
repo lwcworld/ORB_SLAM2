@@ -26,7 +26,7 @@ namespace ORB_SLAM2
 //SlamDataPub::SlamDataPub(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Tracking *pTracking, const string &strSettingPath, Map *pMap, LocalMapping *pLocalMapper, LoopClosing *pLoopCLoser):
 SlamDataPub::SlamDataPub(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Tracking *pTracking, const string &strSettingPath, Map *pMap): mpSystem(pSystem), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking), mpMap(pMap),
   //  mpSystem(pSystem), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking), mpMap(pMap), mpLocalMapper(pLocalMapper), mpLoopCloser(pLoopCLoser),
-    mbFinishRequested(false), mbFinished(true), mbStopped(true), mbStopRequested(false), scaleFactor(1.0)
+    mbFinishRequested(false), mbFinished(true), mbStopped(true), mbStopRequested(false), scaleFactor(1.0), scaleCalculated(false)
 {
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
@@ -399,6 +399,9 @@ void SlamDataPub::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {
     if (joy->buttons.at(5)){
         mpSystem->Reset();
+	scaleFactor = 1.0;
+	scaleCalculated = false;
+	printf("reset\n");
     }
 }
 
@@ -670,33 +673,36 @@ void SlamDataPub::calcScale(){
     uint8_t cnt = 0;
     uint8_t notNan = 0;
     while(1) {
-        mOdomPositionDiff = mOdomPosition - mOdomPositionOld;
-        mCamPositionDiff = mCamPosition -mCamPositionOld;
-        
-        distanceOdom = mOdomPositionDiff.norm();
-        distanceCam = mCamPositionDiff.norm();
-        if (distanceOdom > 0.1 && !isnan(distanceOdom && cnt < 20) ){
-            mOdomPositionOld = mOdomPosition;
-            mCamPositionOld = mCamPosition;
-            scaleFactorAll[cnt] = distanceOdom / distanceCam;
-            ROS_INFO("Distance2: [%f] [%f] [%f]",distanceOdom, distanceCam, scaleFactorAll[cnt]);
-            cnt++;
-        }
-        if (cnt >= 20){
-            for (uint8_t i = 0; i<sizeof(scaleFactor);i++)
-            {   
-                if (!isnan(scaleFactorAll[i]) && !isinf(scaleFactorAll[i])){
-                    scaleFactor += scaleFactorAll[i];
-                    notNan++;
-                }
-                
-            }
-            scaleFactor = scaleFactor/((float)notNan);
-            ROS_INFO("scaleFactor: [%f]",scaleFactor);
-            //scaleFactor = 1.0;
-            break;
-        }
-        
+	if(!scaleCalculated)
+	{
+	    mOdomPositionDiff = mOdomPosition - mOdomPositionOld;
+	    mCamPositionDiff = mCamPosition -mCamPositionOld;
+	    
+	    distanceOdom = mOdomPositionDiff.norm();
+	    distanceCam = mCamPositionDiff.norm();
+	    if (distanceOdom > 0.1 && !isnan(distanceOdom && cnt < 20) ){
+		mOdomPositionOld = mOdomPosition;
+		mCamPositionOld = mCamPosition;
+		scaleFactorAll[cnt] = distanceOdom / distanceCam;
+		ROS_INFO("Distance2: [%f] [%f] [%f]",distanceOdom, distanceCam, scaleFactorAll[cnt]);
+		cnt++;
+	    }
+	    if (cnt >= 20){
+		for (uint8_t i = 0; i < sizeof(scaleFactorAll) / sizeof(scaleFactorAll[0]);i++)
+		{   
+		    if (!isnan(scaleFactorAll[i]) && !isinf(scaleFactorAll[i])){
+			scaleFactor += scaleFactorAll[i];
+			notNan++;
+			printf("%f, %f, %f\n",scaleFactor, scaleFactorAll[i],((float)notNan));
+		    }
+		    
+		}
+		scaleFactor = scaleFactor/((float)notNan);
+		ROS_INFO("scaleFactor: [%f]",scaleFactor);
+		scaleCalculated = true;
+		cnt = 0;
+	    }
+	}
         if (CheckFinish())
                 break;
         usleep(10000);
